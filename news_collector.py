@@ -7,6 +7,14 @@ from settings import NEWS_API_KEY, GNEWS_API_KEY, INSTRUMENTS, MARKET_SYMBOLS, M
 from database import save_news_to_db, save_prices_to_db, save_price_predictions_to_db, save_trade_recommendations_to_db
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import yfinance as yf
+import nltk
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+
+# Ensure vader_lexicon is downloaded
+nltk.download('vader_lexicon')
+
+# Initialize Sentiment Analyzer
+sia = SentimentIntensityAnalyzer()
 
 # Initialize Sentiment Analyzer
 sia = SentimentIntensityAnalyzer()
