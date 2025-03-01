@@ -33,7 +33,6 @@ def analyze_sentiment(text):
     else:
         return "Neutral"
 
-# Function to fetch news from NewsAPI
 def fetch_newsapi_news():
     url = "https://newsapi.org/v2/everything"
     news_data = []
@@ -65,15 +64,16 @@ def fetch_newsapi_news():
                     "sentiment": sentiment
                 })
         elif response.status_code == 429:
-            print(f"🛑 NewsAPI Rate Limit Reached! Waiting 60 seconds before retrying...")
-            time.sleep(60)
+            print(f"🛑 NewsAPI Rate Limit Reached! Waiting 10 minutes before retrying...")
+            time.sleep(600)  # Wait 10 minutes before retrying
             return fetch_newsapi_news()
         else:
             print(f"⚠️ Failed to fetch NewsAPI data for {instrument}. Status Code: {response.status_code}")
 
-        time.sleep(5)
+        time.sleep(10)  # Add a longer delay between requests
 
     return news_data
+
 
 # Function to fetch Gold (XAU/USD) price from Metals-API
 def fetch_gold_price():
