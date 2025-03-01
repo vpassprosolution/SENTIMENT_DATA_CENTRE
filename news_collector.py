@@ -67,21 +67,28 @@ def fetch_newsapi_news():
 # Function to fetch Gold (XAU/USD) price from Metals-API
 def fetch_gold_price():
     print("\n📈 Fetching Gold (XAU/USD) price from Metals-API...\n")
-    # Using "XAU" as the valid symbol per Metals-API documentation
-    url = f"https://metals-api.com/api/latest?access_key={METALS_API_KEY}&base=USD&symbols=XAU"
+    # Using "USDXAU" as the correct symbol for Gold in Metals-API
+    url = f"https://metals-api.com/api/latest?access_key={METALS_API_KEY}&base=USD&symbols=USDXAU"
+    
     try:
         response = requests.get(url)
         data = response.json()
-        if data.get("success") and "rates" in data and "XAU" in data["rates"]:
-            gold_price = round(float(data["rates"]["XAU"]), 2)
+
+        # Print the full response for debugging
+        print(f"🔍 Metals-API Response: {json.dumps(data, indent=2)}")
+
+        # Check if request was successful
+        if data.get("success") and "rates" in data and "USDXAU" in data["rates"]:
+            gold_price = round(float(data["rates"]["USDXAU"]), 2)
             print(f"✅ Gold (XAU/USD) Price (Formatted): {gold_price}")
             return gold_price
         else:
-            print(f"⚠️ Failed to fetch Gold price: {data}")
+            print(f"⚠️ Failed to fetch Gold price. API Response: {data}")
             return None
     except Exception as e:
         print(f"⚠️ Error fetching Gold price: {e}")
         return None
+
 
 # Function to fetch real-time market prices
 def fetch_market_prices():
