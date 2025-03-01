@@ -95,19 +95,21 @@ def fetch_gold_price():
         return None
 
 
-
-
 # Function to fetch real-time market prices
 def fetch_market_prices():
     print("\n📈 Fetching real-time market prices...\n")
     prices = {}
-    # Fetch Gold Price from Metals-API
+
+    # Fetch Gold Price from Metals-API (ONLY)
     gold_price = fetch_gold_price()
     if gold_price:
-        prices["gold"] = gold_price
-    # Fetch other market prices from Yahoo Finance
+        prices["XAUUSD"] = gold_price  # Store Gold price as XAUUSD
+    else:
+        print("⚠️ Warning: Gold price not available.")
+
+    # Fetch other market prices from Yahoo Finance (EXCLUDING Gold)
     for instrument, symbol in MARKET_SYMBOLS.items():
-        if instrument == "gold":
+        if instrument.lower() == "gold" or symbol == "XAUUSD=X":  # Skip Gold
             continue
         try:
             stock = yf.Ticker(symbol)
@@ -116,7 +118,9 @@ def fetch_market_prices():
             print(f"✅ {instrument} Price: {prices[instrument]}")
         except Exception as e:
             print(f"⚠️ Failed to fetch price for {instrument}: {e}")
+
     return prices
+
 
 # Function to predict Bullish/Bearish trends based on market prices
 def predict_price_trends(market_prices):
