@@ -9,6 +9,8 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import yfinance as yf
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from database import save_news_risks_to_db
+
 
 # Ensure vader_lexicon is downloaded
 nltk.download('vader_lexicon')
