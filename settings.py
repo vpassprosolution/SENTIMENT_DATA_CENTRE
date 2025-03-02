@@ -17,12 +17,13 @@ INSTRUMENTS = {
     "gbp/usd": "GBPUSD"
 }
 
-# PostgreSQL Database Configuration
-DB_NAME = "news_db"
+DB_NAME = "railway"
 DB_USER = "postgres"
-DB_PASSWORD = "Didie555363!"
-DB_HOST = "localhost"
-DB_PORT = "5432"
+DB_PASSWORD = "vVMyqWjrqgVhEnwyFifTQxkDtPjQutGb"  # ✅ Use the correct password from Railway
+DB_HOST = "interchange.proxy.rlwy.net"
+DB_PORT = "30451"
+
+
 
 # Yahoo Finance Symbols for Real-Time Prices
 MARKET_SYMBOLS = {
