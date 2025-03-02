@@ -19,12 +19,13 @@ def save_news_to_db(news_list):
 
     cursor = conn.cursor()
     for news in news_list:
+        instrument = news["instrument"].replace("/", "-")  # Convert '/' to '-'
         cursor.execute("""
             INSERT INTO news_articles (source, instrument, title, description, url, published_at, sentiment)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         """, (
             news["source"],
-            news["instrument"],
+            instrument,
             news["title"],
             news["description"],
             news["url"],
@@ -45,10 +46,11 @@ def save_prices_to_db(prices):
 
     cursor = conn.cursor()
     for instrument, price in prices.items():
+        formatted_instrument = instrument.replace("/", "-")  # Convert '/' to '-'
         cursor.execute("""
             INSERT INTO market_prices (instrument, price, timestamp)
             VALUES (%s, %s, NOW())
-        """, (instrument, float(price)))  # Ensure price is stored as a Python float
+        """, (formatted_instrument, float(price)))  # Ensure price is stored as a Python float
 
     conn.commit()
     cursor.close()
@@ -63,11 +65,12 @@ def save_price_predictions_to_db(predictions):
 
     cursor = conn.cursor()
     for instrument, prediction in predictions.items():
+        formatted_instrument = instrument.replace("/", "-")  # Convert '/' to '-'
         cursor.execute("""
             INSERT INTO price_predictions (instrument, trend, confidence, timestamp)
             VALUES (%s, %s, %s, NOW())
         """, (
-            instrument,
+            formatted_instrument,
             prediction["trend"],
             prediction["confidence"]
         ))
@@ -85,11 +88,12 @@ def save_trade_recommendations_to_db(recommendations):
 
     cursor = conn.cursor()
     for instrument, recommendation in recommendations.items():
+        formatted_instrument = instrument.replace("/", "-")  # Convert '/' to '-'
         cursor.execute("""
             INSERT INTO trade_recommendations (instrument, recommendation, confidence, timestamp)
             VALUES (%s, %s, %s, NOW())
         """, (
-            instrument,
+            formatted_instrument,
             recommendation["action"],
             recommendation["confidence"]
         ))
@@ -107,11 +111,12 @@ def save_news_risks_to_db(risks):
 
     cursor = conn.cursor()
     for instrument, risk in risks.items():
+        formatted_instrument = instrument.replace("/", "-")  # Convert '/' to '-'
         cursor.execute("""
             INSERT INTO news_risks (instrument, risk_level, risk_reason, timestamp)
             VALUES (%s, %s, %s, NOW())
         """, (
-            instrument,
+            formatted_instrument,
             risk["risk_level"],
             risk["risk_reason"]
         ))
