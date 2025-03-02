@@ -8,6 +8,8 @@ from database import save_news_to_db, save_prices_to_db, save_price_predictions_
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import yfinance as yf
 import nltk
+import psycopg2  # ✅ Add this line
+
 
 # Ensure vader_lexicon is downloaded
 nltk.download('vader_lexicon')
@@ -48,13 +50,14 @@ def delete_old_news():
             dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT
         )
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM news_articles")
+        cursor.execute("DELETE FROM news_articles")  # ✅ Delete all old news
         conn.commit()
         cursor.close()
         conn.close()
         print("🗑️ Old news deleted successfully.")
     except Exception as e:
         print(f"⚠️ Error deleting old news: {e}")
+
 
 
 
