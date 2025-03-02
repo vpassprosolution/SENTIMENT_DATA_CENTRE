@@ -38,7 +38,7 @@ def save_news_to_db(news_list):
     conn.close()
     print("✅ News data (with sentiment) saved to PostgreSQL database.")
 
-# Function to save real-time prices to the database
+# ✅ Function to save real-time prices to the database (Fix for Gold/XAUUSD)
 def save_prices_to_db(prices):
     conn = connect_db()
     if not conn:
@@ -46,18 +46,23 @@ def save_prices_to_db(prices):
 
     cursor = conn.cursor()
     for instrument, price in prices.items():
-        formatted_instrument = instrument.replace("/", "-")  # Convert '/' to '-'
+        # ✅ Convert "XAUUSD" to "gold" before saving
+        if instrument == "XAUUSD":
+            instrument = "gold"
+        else:
+            instrument = instrument.replace("/", "-")  # Convert '/' to '-'
+
         cursor.execute("""
             INSERT INTO market_prices (instrument, price, timestamp)
             VALUES (%s, %s, NOW())
-        """, (formatted_instrument, float(price)))  # Ensure price is stored as a Python float
+        """, (instrument, float(price)))  # Ensure price is stored as a Python float
 
     conn.commit()
     cursor.close()
     conn.close()
     print("✅ Market prices saved to PostgreSQL database.")
 
-# Function to save AI price predictions to the database
+# ✅ Function to save AI price predictions to the database (Fix for Gold/XAUUSD)
 def save_price_predictions_to_db(predictions):
     conn = connect_db()
     if not conn:
@@ -65,12 +70,16 @@ def save_price_predictions_to_db(predictions):
 
     cursor = conn.cursor()
     for instrument, prediction in predictions.items():
-        formatted_instrument = instrument.replace("/", "-")  # Convert '/' to '-'
+        if instrument == "XAUUSD":
+            instrument = "gold"
+        else:
+            instrument = instrument.replace("/", "-")
+
         cursor.execute("""
             INSERT INTO price_predictions (instrument, trend, confidence, timestamp)
             VALUES (%s, %s, %s, NOW())
         """, (
-            formatted_instrument,
+            instrument,
             prediction["trend"],
             prediction["confidence"]
         ))
@@ -80,7 +89,7 @@ def save_price_predictions_to_db(predictions):
     conn.close()
     print("✅ AI Price Predictions saved to PostgreSQL database.")
 
-# Function to save AI-generated Buy/Sell/Hold recommendations
+# ✅ Function to save AI-generated Buy/Sell/Hold recommendations (Fix for Gold/XAUUSD)
 def save_trade_recommendations_to_db(recommendations):
     conn = connect_db()
     if not conn:
@@ -88,12 +97,16 @@ def save_trade_recommendations_to_db(recommendations):
 
     cursor = conn.cursor()
     for instrument, recommendation in recommendations.items():
-        formatted_instrument = instrument.replace("/", "-")  # Convert '/' to '-'
+        if instrument == "XAUUSD":
+            instrument = "gold"
+        else:
+            instrument = instrument.replace("/", "-")
+
         cursor.execute("""
             INSERT INTO trade_recommendations (instrument, recommendation, confidence, timestamp)
             VALUES (%s, %s, %s, NOW())
         """, (
-            formatted_instrument,
+            instrument,
             recommendation["action"],
             recommendation["confidence"]
         ))
@@ -103,7 +116,7 @@ def save_trade_recommendations_to_db(recommendations):
     conn.close()
     print("✅ AI Trade Recommendations saved to PostgreSQL database.")
 
-# Function to save AI-detected risks from financial news to the database
+# ✅ Function to save AI-detected risks from financial news to the database (Fix for Gold/XAUUSD)
 def save_news_risks_to_db(risks):
     conn = connect_db()
     if not conn:
@@ -111,12 +124,16 @@ def save_news_risks_to_db(risks):
 
     cursor = conn.cursor()
     for instrument, risk in risks.items():
-        formatted_instrument = instrument.replace("/", "-")  # Convert '/' to '-'
+        if instrument == "XAUUSD":
+            instrument = "gold"
+        else:
+            instrument = instrument.replace("/", "-")
+
         cursor.execute("""
             INSERT INTO news_risks (instrument, risk_level, risk_reason, timestamp)
             VALUES (%s, %s, %s, NOW())
         """, (
-            formatted_instrument,
+            instrument,
             risk["risk_level"],
             risk["risk_reason"]
         ))

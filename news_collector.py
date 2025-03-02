@@ -44,20 +44,28 @@ def is_financial_news(title, description):
     text = (title + " " + description).lower()
     return any(keyword in text for keyword in FINANCIAL_KEYWORDS)
 
-# ✅ Function to Delete Old News Before Inserting New News
+# ✅ Function to Delete Old Data from All 5 Tables
 def delete_old_news():
     try:
         conn = psycopg2.connect(
             dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT
         )
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM news_articles")  # ✅ Deletes all old news
+        
+        # ✅ Delete data from all 5 tables
+        cursor.execute("DELETE FROM news_articles;")
+        cursor.execute("DELETE FROM news_risks;")
+        cursor.execute("DELETE FROM price_predictions;")
+        cursor.execute("DELETE FROM trade_recommendations;")
+        cursor.execute("DELETE FROM market_prices;")
+
         conn.commit()
         cursor.close()
         conn.close()
-        print("🗑️ Old news deleted successfully.")
+        print("🗑️ Old data deleted successfully from all tables.")
     except Exception as e:
-        print(f"⚠️ Error deleting old news: {e}")
+        print(f"⚠️ Error deleting old data: {e}")
+
 
 
 # Function to fetch news from NewsAPI
