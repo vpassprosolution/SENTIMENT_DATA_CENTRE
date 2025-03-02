@@ -15,6 +15,14 @@ nltk.download('vader_lexicon')
 # Initialize Sentiment Analyzer
 sia = SentimentIntensityAnalyzer()
 
+# ✅ Strong financial keywords to filter relevant news
+FINANCIAL_KEYWORDS = [
+    "price", "market", "stocks", "trading", "investment", "inflation", "interest rate",
+    "crash", "bullish", "bearish", "technical analysis", "forecast", "economic",
+    "central bank", "currency", "commodities", "regulation", "SEC", "ETF"
+]  # ✅ Ensure this closing bracket exists
+
+
 # Function to analyze sentiment of a news article
 def analyze_sentiment(text):
     if not text:
@@ -28,61 +36,100 @@ def analyze_sentiment(text):
     else:
         return "Neutral"
 
+# ✅ New Function: Filter only financial news
+def is_financial_news(title, description):
+    text = (title + " " + description).lower()
+    return any(keyword in text for keyword in FINANCIAL_KEYWORDS)
+
+# ✅ Function to Delete Old News Before Inserting New News
+def delete_old_news():
+    try:
+        conn = psycopg2.connect(
+            dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT
+        )
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM news_articles")
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print("🗑️ Old news deleted successfully.")
+    except Exception as e:
+        print(f"⚠️ Error deleting old news: {e}")
+
+
+
 # Function to fetch news from NewsAPI
 def fetch_newsapi_news():
     url = "https://newsapi.org/v2/everything"
     news_data = []
+    
     for instrument, keyword in INSTRUMENTS.items():
+        # Improve keyword for Gold to get more financial news
+        if instrument == "gold":
+            keyword = "gold price OR gold market OR XAUUSD OR gold trading"
+
         params = {
             "q": keyword,
             "apiKey": NEWS_API_KEY,
             "language": "en",
             "sortBy": "publishedAt",
-            "pageSize": 5
+            "pageSize": 20  # Fetch extra news to filter
         }
+        
         response = requests.get(url, params=params)
         print(f"\n🔎 NewsAPI Response for {instrument}: {response.status_code}")
+        
         if response.status_code == 200:
             articles = response.json().get("articles", [])
+            filtered_articles = []
             for article in articles:
-                sentiment = analyze_sentiment(article.get("title", "") + " " + article.get("description", ""))
-                news_data.append({
-                    "source": "NewsAPI",
-                    "instrument": instrument,
-                    "title": article.get("title", "No Title"),
-                    "description": article.get("description", "No Description"),
-                    "url": article.get("url", "#"),
-                    "published_at": article.get("publishedAt", "N/A"),
-                    "sentiment": sentiment
-                })
+                title = article.get("title", "No Title")
+                description = article.get("description", "No Description")
+                sentiment = analyze_sentiment(title + " " + description)
+                
+                # ✅ Apply filtering: Only keep articles related to financial markets
+                if is_financial_news(title, description):
+                    filtered_articles.append({
+                        "source": "NewsAPI",
+                        "instrument": instrument,
+                        "title": title,
+                        "description": description,
+                        "url": article.get("url", "#"),
+                        "published_at": article.get("publishedAt", "N/A"),
+                        "sentiment": sentiment
+                    })
+                
+                # ✅ Stop when we get 10 valid financial news articles
+                if len(filtered_articles) == 10:
+                    break
+            
+            news_data.extend(filtered_articles)
+
         elif response.status_code == 429:
             print("🛑 NewsAPI Rate Limit Reached! Waiting 10 minutes before retrying...")
             time.sleep(600)
             return fetch_newsapi_news()
+        
         else:
             print(f"⚠️ Failed to fetch NewsAPI data for {instrument}. Status Code: {response.status_code}")
+        
         time.sleep(10)
+    
     return news_data
 
 # Function to fetch Gold (XAU/USD) price from Metals-API
 def fetch_gold_price():
     print("\n📈 Fetching Gold (XAU/USD) price from Metals-API...\n")
     
-    # Using "XAU" as the correct Metals-API symbol
     url = f"https://metals-api.com/api/latest?access_key={METALS_API_KEY}&base=USD&symbols=XAU"
 
     try:
         response = requests.get(url)
         data = response.json()
-
-        # Print full API response for debugging
         print(f"🔍 Metals-API Response: {json.dumps(data, indent=2)}")
 
-        # Validate response and extract the correct Gold price
         if data.get("success") and "rates" in data and "XAU" in data["rates"]:
             gold_price_per_ounce = float(data["rates"]["XAU"])
-            
-            # Convert XAU to USD per ounce (1 / XAU gives USD price)
             gold_price = round((1 / gold_price_per_ounce), 2)
             
             print(f"✅ Gold (XAU/USD) Price (Formatted): {gold_price}")
@@ -94,22 +141,19 @@ def fetch_gold_price():
         print(f"⚠️ Error fetching Gold price: {e}")
         return None
 
-
 # Function to fetch real-time market prices
 def fetch_market_prices():
     print("\n📈 Fetching real-time market prices...\n")
     prices = {}
 
-    # Fetch Gold Price from Metals-API (ONLY)
     gold_price = fetch_gold_price()
     if gold_price:
-        prices["XAUUSD"] = gold_price  # Store Gold price as XAUUSD
+        prices["XAUUSD"] = gold_price  
     else:
         print("⚠️ Warning: Gold price not available.")
 
-    # Fetch other market prices from Yahoo Finance (EXCLUDING Gold)
     for instrument, symbol in MARKET_SYMBOLS.items():
-        if instrument.lower() == "gold" or symbol == "XAUUSD=X":  # Skip Gold
+        if instrument.lower() == "gold" or symbol == "XAUUSD=X":  
             continue
         try:
             stock = yf.Ticker(symbol)
@@ -121,7 +165,6 @@ def fetch_market_prices():
 
     return prices
 
-
 # Function to predict Bullish/Bearish trends based on market prices
 def predict_price_trends(market_prices):
     print("\n🤖 Predicting Market Trends...\n")
@@ -129,48 +172,19 @@ def predict_price_trends(market_prices):
     for instrument, price in market_prices.items():
         try:
             stock = yf.Ticker(MARKET_SYMBOLS[instrument])
-            history = stock.history(period="2d")  # Get last 2 days
+            history = stock.history(period="2d")  
             if len(history) < 2:
                 print(f"⚠️ Not enough data for {instrument}")
                 continue
             prev_price = history["Close"].iloc[-2]
             current_price = history["Close"].iloc[-1]
-            if current_price > prev_price:
-                trend = "Bullish"
-                confidence = 85.0
-            else:
-                trend = "Bearish"
-                confidence = 85.0
+            trend = "Bullish" if current_price > prev_price else "Bearish"
+            confidence = 85.0
             predictions[instrument] = {"trend": trend, "confidence": confidence}
             print(f"✅ {instrument} Prediction: {trend} (Confidence: {confidence}%)")
         except Exception as e:
             print(f"⚠️ Failed to predict trend for {instrument}: {e}")
     return predictions
-
-# Function to generate AI Trade Recommendations using sentiment and predictions
-def generate_trade_recommendations(price_predictions, news_data):
-    print("\n📊 Generating AI Trade Recommendations...\n")
-    recommendations = {}
-    for instrument, prediction in price_predictions.items():
-        trend = prediction["trend"]
-        confidence = prediction["confidence"]
-        latest_sentiment = "Neutral"
-        for news in news_data:
-            if news["instrument"] == instrument:
-                latest_sentiment = news["sentiment"]
-                break
-        if trend == "Bullish" and latest_sentiment == "Bullish":
-            action = "BUY"
-            confidence = 90.0
-        elif trend == "Bearish" and latest_sentiment == "Bearish":
-            action = "SELL"
-            confidence = 90.0
-        else:
-            action = "HOLD"
-            confidence = 70.0
-        recommendations[instrument] = {"action": action, "confidence": confidence}
-        print(f"✅ {instrument} Trade Recommendation: {action} (Confidence: {confidence}%)")
-    return recommendations
 
 # Function to detect risks in financial news
 def detect_risks_from_news(news_data):
@@ -206,28 +220,35 @@ def detect_risks_from_news(news_data):
             print(f"⚠️ {instrument} Risk: {risk_level} due to {detected_risk}")
     return risks
 
-# Main function to collect and store financial data
+# ✅ Main function to collect and store financial data
 def collect_financial_data():
     print("\n🚀 Fetching latest financial news, market prices, and AI predictions...\n")
-    # Fetch News and Sentiment
+    
+    # ✅ Step 1: Delete Old News Before Storing New Data
+    delete_old_news()
+    
+    # ✅ Step 2: Fetch Latest News
     news_list = fetch_newsapi_news()
     save_news_to_db(news_list)
-    # Detect Risks from News
+
+    # ✅ Step 3: Analyze Risks from News
     news_risks = detect_risks_from_news(news_list)
     save_news_risks_to_db(news_risks)
-    # Fetch Market Prices
+
+    # ✅ Step 4: Fetch Real-Time Market Prices
     market_prices = fetch_market_prices()
     save_prices_to_db(market_prices)
-    # Generate AI Price Predictions
+
+    # ✅ Step 5: Predict Market Trends
     price_predictions = predict_price_trends(market_prices)
     save_price_predictions_to_db(price_predictions)
-    # Generate AI Trade Recommendations
-    trade_recommendations = generate_trade_recommendations(price_predictions, news_list)
-    save_trade_recommendations_to_db(trade_recommendations)
+
     print("✅ Data collection complete. Waiting for next update.")
 
+# ✅ Run the Script Every 2 Hours
 if __name__ == "__main__":
     while True:
         collect_financial_data()
         print("⏳ Waiting 2 hours before next fetch...\n")
         time.sleep(7200)
+
