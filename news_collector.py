@@ -9,6 +9,7 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import yfinance as yf
 import nltk
 import psycopg2  # ✅ Add this line
+from settings import DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
 
 
 # Ensure vader_lexicon is downloaded
@@ -50,15 +51,13 @@ def delete_old_news():
             dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT
         )
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM news_articles")  # ✅ Delete all old news
+        cursor.execute("DELETE FROM news_articles")  # ✅ Deletes all old news
         conn.commit()
         cursor.close()
         conn.close()
         print("🗑️ Old news deleted successfully.")
     except Exception as e:
         print(f"⚠️ Error deleting old news: {e}")
-
-
 
 
 # Function to fetch news from NewsAPI
