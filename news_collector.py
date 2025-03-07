@@ -93,8 +93,11 @@ def fetch_newsapi_news():
             articles = response.json().get("articles", [])
             filtered_articles = []
             for article in articles:
-                title = article.get("title", "No Title")
-                description = article.get("description", "No Description")
+                title = article.get("title") or "No Title"
+                description = article.get("description") or "No Description"
+
+                print(f"DEBUG: Title: {title}, Description: {description}")  # Debugging print
+
                 sentiment = analyze_sentiment(title + " " + description)
                 
                 # ✅ Apply filtering: Only keep articles related to financial markets
