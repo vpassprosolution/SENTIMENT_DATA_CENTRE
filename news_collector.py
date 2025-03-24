@@ -42,9 +42,24 @@ def analyze_sentiment(text):
         return "Neutral"
 
 # ✅ New Function: Filter only financial news
-def is_financial_news(title, description):
+def is_financial_news(title, description, instrument):
     text = (title + " " + description).lower()
-    return any(keyword in text for keyword in FINANCIAL_KEYWORDS)
+    has_financial_term = any(keyword in text for keyword in FINANCIAL_KEYWORDS)
+    
+    # Check if instrument is clearly mentioned
+    instrument_keywords = {
+        "gold": ["gold", "xauusd"],
+        "bitcoin": ["bitcoin", "btc"],
+        "ethereum": ["ethereum", "eth"],
+        "dow jones": ["dow", "dji"],
+        "nasdaq": ["nasdaq", "ixic"],
+        "eur/usd": ["eurusd", "eur/usd", "euro dollar"],
+        "gbp/usd": ["gbpusd", "gbp/usd", "pound dollar"]
+    }
+
+    relevant = any(word in text for word in instrument_keywords.get(instrument, []))
+
+    return has_financial_term and relevant
 
 # ✅ Function to Delete Old Data from All 5 Tables
 def delete_old_news():
@@ -76,7 +91,7 @@ def delete_old_news():
 def fetch_newsapi_news():
     url = "https://newsapi.org/v2/everything"
     news_data = []
-    
+
     for instrument, keyword in INSTRUMENTS.items():
         # Improve keyword for Gold to get more financial news
         if instrument == "gold":
@@ -87,25 +102,27 @@ def fetch_newsapi_news():
             "apiKey": NEWS_API_KEY,
             "language": "en",
             "sortBy": "publishedAt",
-            "pageSize": 20  # Fetch extra news to filter
+            "pageSize": 20  # Fetch more so we can filter better
         }
-        
+
         response = requests.get(url, params=params)
         print(f"\n🔎 NewsAPI Response for {instrument}: {response.status_code}")
-        
+
         if response.status_code == 200:
             articles = response.json().get("articles", [])
             filtered_articles = []
+
             for article in articles:
                 title = article.get("title") or "No Title"
                 description = article.get("description") or "No Description"
 
-                print(f"DEBUG: Title: {title}, Description: {description}")  # Debugging print
+                print(f"DEBUG: Title: {title}")
+                print(f"DEBUG: Description: {description}")
 
                 sentiment = analyze_sentiment(title + " " + description)
-                
-                # ✅ Apply filtering: Only keep articles related to financial markets
-                if is_financial_news(title, description):
+
+                # ✅ Strong filtering: must be financial AND mention the instrument
+                if is_financial_news(title, description, instrument):
                     filtered_articles.append({
                         "source": "NewsAPI",
                         "instrument": instrument,
@@ -115,24 +132,26 @@ def fetch_newsapi_news():
                         "published_at": article.get("publishedAt", "N/A"),
                         "sentiment": sentiment
                     })
-                
-                # ✅ Stop when we get 10 valid financial news articles
-                if len(filtered_articles) == 10:
+
+                # ✅ Stop when 5 solid news are collected
+                if len(filtered_articles) == 5:
                     break
-            
+
             news_data.extend(filtered_articles)
 
         elif response.status_code == 429:
             print("🛑 NewsAPI Rate Limit Reached! Waiting 10 minutes before retrying...")
             time.sleep(600)
             return fetch_newsapi_news()
-        
+
         else:
             print(f"⚠️ Failed to fetch NewsAPI data for {instrument}. Status Code: {response.status_code}")
-        
+
+        # ⏳ Pause to respect rate limits
         time.sleep(10)
-    
+
     return news_data
+
 
 # Function to fetch Gold (XAU/USD) price from Metals-API
 def fetch_gold_price():
