@@ -3,5 +3,3 @@ psycopg2-binary
 nltk
 yfinance
 beautifulsoup4
-selenium
-undetected-chromedriver

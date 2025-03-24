@@ -10,7 +10,7 @@ import yfinance as yf
 import nltk
 import psycopg2  # ✅ Add this line
 from settings import DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
-from macro_scraper_selenium import scrape_macro_data
+from macro_te_api import fetch_macro_data_from_api
 
 
 # Ensure vader_lexicon is downloaded
@@ -315,7 +315,8 @@ def collect_financial_data():
     trade_recommendations = generate_trade_recommendations(price_predictions, news_list)
     save_trade_recommendations_to_db(trade_recommendations)
     # ✅ Step 7: Scrape and Save Macroeconomic Data
-    scrape_macro_data()
+    fetch_macro_data_from_api()  # ✅ NEW FUNCTION
+
 
     print("✅ Data collection complete. Waiting for next update.")
 
