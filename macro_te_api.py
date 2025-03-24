@@ -1,4 +1,5 @@
 import requests
+from urllib.parse import quote
 from database import save_macro_data_to_db
 
 TRADINGECONOMICS_API = "0feda09f7305492:q7z83h8t87sjt2y"
@@ -15,19 +16,25 @@ def fetch_macro_data_from_api():
         "Industrial Production": "United States Industrial Production"
     }
 
-    base_url = "https://api.tradingeconomics.com/historical/country/united states/indicator"
+    base_url = "https://api.tradingeconomics.com/historical/country/united-states/indicator"
     headers = {"Accept": "application/json"}
     macro_data = []
 
     for label, indicator in indicators.items():
-        url = f"{base_url}/{indicator.replace(' ', '%20')}?c={TRADINGECONOMICS_API}&format=json"
+        encoded_indicator = quote(indicator)  # ✅ URL-safe encoding
+        url = f"{base_url}/{encoded_indicator}?c={TRADINGECONOMICS_API}&format=json"
         try:
             response = requests.get(url, headers=headers, timeout=10)
             data = response.json()
+
+            # ✅ Debug print full response (optional)
+            # print(f"📥 Raw response for {label}: {json.dumps(data, indent=2)}")
+
             if isinstance(data, list) and len(data) > 0:
                 latest = data[0]
-                value = latest["Value"]
-                unit = "%"  # Most are %, you can adjust later if needed
+                value = latest.get("Value", "N/A")
+                unit = "%"  # Most are percentages
+
                 print(f"✅ {label}: {value} {unit}")
 
                 macro_data.append({
