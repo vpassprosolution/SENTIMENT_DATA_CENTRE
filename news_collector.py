@@ -10,7 +10,8 @@ import yfinance as yf
 import nltk
 import psycopg2  # ✅ Add this line
 from settings import DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
-from macro_te_api import fetch_macro_data_from_api
+from macro_fred_api import fetch_macro_data_from_api
+
 
 
 # Ensure vader_lexicon is downloaded
