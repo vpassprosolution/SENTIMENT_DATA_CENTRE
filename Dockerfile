@@ -1,40 +1,25 @@
-# ✅ Use official Python base
+# ✅ Use a full Debian base with Python
 FROM python:3.10-slim
 
 # ✅ Install Chrome dependencies
 RUN apt-get update && apt-get install -y \
-    wget \
-    gnupg \
-    unzip \
-    curl \
-    fonts-liberation \
-    libappindicator3-1 \
-    libasound2 \
-    libatk-bridge2.0-0 \
-    libatk1.0-0 \
-    libcups2 \
-    libdbus-1-3 \
-    libgdk-pixbuf2.0-0 \
-    libnspr4 \
-    libnss3 \
-    libx11-xcb1 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxrandr2 \
-    xdg-utils \
+    wget unzip gnupg curl \
+    libglib2.0-0 libnss3 libgconf-2-4 libfontconfig1 libxss1 \
+    libappindicator3-1 libasound2 libxtst6 xdg-utils fonts-liberation \
+    libx11-xcb1 libxcomposite1 libxdamage1 libxrandr2 libgtk-3-0 \
     --no-install-recommends && apt-get clean
 
-# ✅ Install Chrome (headless)
-RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
-    apt install ./google-chrome-stable_current_amd64.deb -y
+# ✅ Install Chrome
+RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
+    dpkg -i google-chrome-stable_current_amd64.deb || apt-get -fy install
 
-# ✅ Create app folder
+# ✅ Set workdir
 WORKDIR /app
-COPY . /app
+COPY . .
 
-# ✅ Install dependencies
+# ✅ Install Python packages
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-# ✅ Start app
+# ✅ Start script
 CMD ["python", "news_collector.py"]
