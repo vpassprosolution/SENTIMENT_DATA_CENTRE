@@ -7,7 +7,7 @@ from database import save_macro_data_to_db
 import time
 
 def scrape_macro_data():
-    print("\n🤖 Launching headless browser to scrape macroeconomic data...\n")
+    print("\n🤖 Scraping macroeconomic data...")  # Confirm function is triggered
 
     options = Options()
     options.add_argument("--headless=new")
@@ -30,16 +30,20 @@ def scrape_macro_data():
     macro_data = []
 
     for item in indicators:
+        print(f"✅ Scraping {item['name']}...")  # Confirm which item we are scraping
+
         try:
             driver.get(item["url"])
+            print(f"✅ Loaded {item['name']} URL...")  # Confirm URL was loaded
+
             # Wait until the macro value element is loaded
             value_element = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.CLASS_NAME, "datatable-item-value"))
             )
             value = value_element.text.strip()
+            print(f"✅ Scraped value for {item['name']}: {value}")  # Print the scraped value
 
-            print(f"✅ {item['name']}: {value} {item['unit']}")
-
+            # Add to macro data
             macro_data.append({
                 "indicator": item["name"],
                 "value": value,
@@ -47,13 +51,15 @@ def scrape_macro_data():
                 "country": "USA",
                 "source": "TradingEconomics"
             })
+
         except Exception as e:
             print(f"⚠️ Failed to scrape {item['name']}: {e}")
 
     driver.quit()
 
     if macro_data:
+        print(f"✅ Saving {len(macro_data)} macro indicators to the database...")  # Debugging line
         save_macro_data_to_db(macro_data)
-        print("✅ All macro data saved.")
     else:
         print("⚠️ No macro data was collected.")
+
