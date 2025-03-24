@@ -16,7 +16,9 @@ def scrape_macro_data():
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--window-size=1920,1080")
 
+    # Start the Chrome browser
     driver = uc.Chrome(options=options)
+    print("✅ Headless Chrome started...")  # Confirm the browser has started
 
     indicators = [
         {"name": "GDP Growth", "url": "https://tradingeconomics.com/united-states/gdp-growth", "unit": "%"},
@@ -33,17 +35,18 @@ def scrape_macro_data():
         print(f"✅ Scraping {item['name']}...")  # Confirm which item we are scraping
 
         try:
+            # Try loading the page and wait for 10 seconds for the value element to appear
             driver.get(item["url"])
             print(f"✅ Loaded {item['name']} URL...")  # Confirm URL was loaded
 
             # Wait until the macro value element is loaded
-            value_element = WebDriverWait(driver, 10).until(
+            value_element = WebDriverWait(driver, 15).until(
                 EC.presence_of_element_located((By.CLASS_NAME, "datatable-item-value"))
             )
             value = value_element.text.strip()
             print(f"✅ Scraped value for {item['name']}: {value}")  # Print the scraped value
 
-            # Add to macro data
+            # Add data to macro_data list
             macro_data.append({
                 "indicator": item["name"],
                 "value": value,
@@ -53,8 +56,9 @@ def scrape_macro_data():
             })
 
         except Exception as e:
-            print(f"⚠️ Failed to scrape {item['name']}: {e}")
+            print(f"⚠️ Failed to scrape {item['name']}: {e}")  # Log the error if it occurs
 
+    # Close the browser after scraping
     driver.quit()
 
     if macro_data:
@@ -62,4 +66,3 @@ def scrape_macro_data():
         save_macro_data_to_db(macro_data)
     else:
         print("⚠️ No macro data was collected.")
-
