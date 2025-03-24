@@ -1,6 +1,8 @@
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from database import save_macro_data_to_db
 import time
 
@@ -30,9 +32,10 @@ def scrape_macro_data():
     for item in indicators:
         try:
             driver.get(item["url"])
-            time.sleep(5)  # Wait for page to load JS
-
-            value_element = driver.find_element(By.CLASS_NAME, "datatable-item-value")
+            # Wait until the macro value element is loaded
+            value_element = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "datatable-item-value"))
+            )
             value = value_element.text.strip()
 
             print(f"✅ {item['name']}: {value} {item['unit']}")
