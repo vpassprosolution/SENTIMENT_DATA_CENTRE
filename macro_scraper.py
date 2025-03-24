@@ -5,15 +5,23 @@ from database import save_macro_events_to_db
 from datetime import datetime
 
 # ✅ Helper function to extract value from TradingEconomics
+# ✅ Updated function to extract value using stronger selector
 def get_indicator_from_te(url, indicator_name, unit):
     try:
         headers = {"User-Agent": "Mozilla/5.0"}
         response = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(response.text, "html.parser")
 
-        # ✅ This class usually contains the value
-        value_div = soup.find("div", class_="pull-left")
-        value = value_div.text.strip() if value_div else "N/A"
+        # ✅ Get value using dynamic table container
+        value_div = soup.find("div", class_="table table-hover table-heatmap")
+        if not value_div:
+            value_div = soup.find("span", {"class": "datatable-item-value"})  # fallback
+
+        # ✅ Final fallback: find value by attribute
+        if not value_div:
+            value_div = soup.find("div", {"class": "value"})
+
+        value = value_div.text.strip().replace("\n", "").replace("\r", "") if value_div else "N/A"
 
         print(f"✅ {indicator_name}: {value} {unit}")
         return {
@@ -26,6 +34,7 @@ def get_indicator_from_te(url, indicator_name, unit):
     except Exception as e:
         print(f"⚠️ Error scraping {indicator_name}: {e}")
         return None
+
 
 # ✅ Main scraper function
 def scrape_macro_data():
