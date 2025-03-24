@@ -1,3 +1,5 @@
+import os
+
 # API Keys Configuration
 NEWS_API_KEY = "8d2b07691ab54b1592d99b5fa6dcc948"
 GNEWS_API_KEY = "dd0490acae3413a8b95335a8ace58347"
