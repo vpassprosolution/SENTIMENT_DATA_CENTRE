@@ -3,3 +3,5 @@ psycopg2
 nltk
 yfinance
 beautifulsoup4
+selenium
+undetected-chromedriver

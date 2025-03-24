@@ -10,7 +10,7 @@ import yfinance as yf
 import nltk
 import psycopg2  # ✅ Add this line
 from settings import DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
-from macro_scraper import scrape_macro_data  # ✅ NEW
+from macro_scraper_selenium import scrape_macro_data
 
 
 # Ensure vader_lexicon is downloaded
