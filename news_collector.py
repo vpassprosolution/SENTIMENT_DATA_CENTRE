@@ -53,13 +53,15 @@ def delete_old_news():
             dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT
         )
         cursor = conn.cursor()
-        
-        # ✅ Delete data from all 5 tables
+
+        # ✅ Delete all data from ALL 7 tables
         cursor.execute("DELETE FROM news_articles;")
         cursor.execute("DELETE FROM news_risks;")
         cursor.execute("DELETE FROM price_predictions;")
         cursor.execute("DELETE FROM trade_recommendations;")
         cursor.execute("DELETE FROM market_prices;")
+        cursor.execute("DELETE FROM macro_data;")         # ✅ Add this
+        cursor.execute("DELETE FROM macro_events;")       # ✅ Add this (optional)
 
         conn.commit()
         cursor.close()
