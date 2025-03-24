@@ -259,18 +259,27 @@ def generate_trade_recommendations(price_predictions, news_data):
     print("\n📊 Generating AI Trade Recommendations...\n")
     recommendations = {}
 
+    if not price_predictions:
+        print("⚠️ No price predictions found.")
+        return recommendations
+
+    print(f"🧠 Found {len(price_predictions)} price predictions.")
+    print(f"📰 Found {len(news_data)} news articles.")
+
     for instrument, prediction in price_predictions.items():
         trend = prediction["trend"]
         confidence = prediction["confidence"]
         latest_sentiment = "Neutral"
 
-        # ✅ Find the latest sentiment for the instrument
+        print(f"🔍 Checking sentiment for: {instrument} | Trend: {trend}")
+
         for news in news_data:
-            if news["instrument"] == instrument:
-                latest_sentiment = news["sentiment"]
+            if news.get("instrument") == instrument:
+                latest_sentiment = news.get("sentiment", "Neutral")
+                print(f"🗞️ Matched news: {news['title']} → Sentiment: {latest_sentiment}")
                 break
 
-        # ✅ Determine trade action based on trend and sentiment
+        # Determine trade action
         if trend == "Bullish" and latest_sentiment == "Bullish":
             action = "BUY"
             confidence = 90.0

@@ -4,7 +4,7 @@ GNEWS_API_KEY = "dd0490acae3413a8b95335a8ace58347"
 ALPHA_VANTAGE_API_KEY = "MJZ6K7M0IZSQVHJ5"
 METALS_API_KEY = "cflqymfx6mzfe1pw3p4zgy13w9gj12z4aavokqd5xw4p8xeplzlwyh64fvrv"
 POSTGRESQL_URL = "postgresql://postgres:vVMyqWjrqgVhEnwyFifTQxkDtPjQutGb@interchange.proxy.rlwy.net:30451/railway"
-
+TRADINGECONOMICS_API = os.getenv("TRADINGECONOMICS_API")
 
 # Financial Instruments to Track
 INSTRUMENTS = {
