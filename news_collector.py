@@ -108,7 +108,12 @@ def fetch_newsapi_news():
 
     for instrument, keyword in INSTRUMENTS.items():
         if instrument == "gold":
-            keyword = "gold price OR gold market OR XAUUSD OR gold trading"
+            # Updated Gold keywords to include "gold trump" and "gold usd"
+            keyword = "gold price OR gold market OR XAUUSD OR gold trading OR gold trump OR gold usd"
+        elif instrument == "eur/usd":
+            keyword = "eur/usd OR euro dollar OR EURUSD"
+        elif instrument == "gbp/usd":
+            keyword = "gbp/usd OR pound dollar OR GBPUSD"
 
         filtered_articles = []
         page = 1
@@ -174,6 +179,7 @@ def fetch_newsapi_news():
         time.sleep(2)  # Additional pause between instruments
 
     return news_data
+
 
 
 
