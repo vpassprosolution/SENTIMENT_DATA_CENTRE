@@ -22,10 +22,9 @@ sia = SentimentIntensityAnalyzer()
 
 # ✅ Strong financial keywords to filter relevant news
 FINANCIAL_KEYWORDS = [
-    "price", "market", "stocks", "trading", "investment", "inflation", "interest rate",
-    "crash", "bullish", "bearish", "technical analysis", "forecast", "economic",
-    "central bank", "currency", "commodities", "regulation", "SEC", "ETF"
-]  # ✅ Ensure this closing bracket exists
+    "central bank", "economic", "commodities", "stocks"
+]
+
 
 
 # Function to analyze sentiment of a news article
@@ -69,19 +68,31 @@ def delete_old_news():
         )
         cursor = conn.cursor()
 
-        # ✅ Delete all data from ALL 7 tables
+        print("🗑️ Deleting old data...")
+
         cursor.execute("DELETE FROM news_articles;")
+        print("✅ Deleted: news_articles")
+
         cursor.execute("DELETE FROM news_risks;")
+        print("✅ Deleted: news_risks")
+
         cursor.execute("DELETE FROM price_predictions;")
+        print("✅ Deleted: price_predictions")
+
         cursor.execute("DELETE FROM trade_recommendations;")
+        print("✅ Deleted: trade_recommendations")
+
         cursor.execute("DELETE FROM market_prices;")
-        cursor.execute("DELETE FROM macro_data;")         # ✅ Add this
-        cursor.execute("DELETE FROM macro_events;")       # ✅ Add this (optional)
+        print("✅ Deleted: market_prices")
+
+        cursor.execute("DELETE FROM macro_data;")
+        print("✅ Deleted: macro_data")
 
         conn.commit()
         cursor.close()
         conn.close()
-        print("🗑️ Old data deleted successfully from all tables.")
+        print("✅ All old data deleted and committed.")
+
     except Exception as e:
         print(f"⚠️ Error deleting old data: {e}")
 
@@ -102,7 +113,7 @@ def fetch_newsapi_news():
             "apiKey": NEWS_API_KEY,
             "language": "en",
             "sortBy": "publishedAt",
-            "pageSize": 20  # Fetch more so we can filter better
+            "pageSize": 20  # Fetch more to allow filtering
         }
 
         response = requests.get(url, params=params)
@@ -121,8 +132,8 @@ def fetch_newsapi_news():
 
                 sentiment = analyze_sentiment(title + " " + description)
 
-                # ✅ Strong filtering: must be financial AND mention the instrument
-                if is_financial_news(title, description, instrument):
+                # ✅ Filter: Match keywords + instrument + skip Neutral
+                if is_financial_news(title, description, instrument) and sentiment != "Neutral":
                     filtered_articles.append({
                         "source": "NewsAPI",
                         "instrument": instrument,
@@ -133,8 +144,8 @@ def fetch_newsapi_news():
                         "sentiment": sentiment
                     })
 
-                # ✅ Stop when 5 solid news are collected
-                if len(filtered_articles) == 5:
+                # ✅ Stop when 3 strong articles are collected
+                if len(filtered_articles) == 3:
                     break
 
             news_data.extend(filtered_articles)
@@ -151,6 +162,7 @@ def fetch_newsapi_news():
         time.sleep(10)
 
     return news_data
+
 
 
 # Function to fetch Gold (XAU/USD) price from Metals-API
@@ -346,7 +358,7 @@ def collect_financial_data():
     trade_recommendations = generate_trade_recommendations(price_predictions, news_list)
     save_trade_recommendations_to_db(trade_recommendations)
     # ✅ Step 7: Scrape and Save Macroeconomic Data
-    fetch_macro_data_from_api()  # ✅ NEW FUNCTION
+    fetch_macro_data_from_api()  # 
 
 
     print("✅ Data collection complete. Waiting for next update.")
@@ -357,5 +369,5 @@ if __name__ == "__main__":
     while True:
         collect_financial_data()
         print("⏳ Waiting 2 hours before next fetch...\n")
-        time.sleep(7200)
+        time.sleep(14400)
 

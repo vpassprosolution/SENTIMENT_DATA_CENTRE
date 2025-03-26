@@ -1,5 +1,7 @@
 import requests
 from database import save_macro_data_to_db
+from database import connect_db
+
 
 FRED_API_KEY = "d3d8486d9bbc4abe1f05678dd6d08301"
 
@@ -11,6 +13,31 @@ INDICATOR_SERIES = {
     "Retail Sales (MoM)": "RSXFS",
     "Industrial Production": "INDPRO"
 }
+
+def save_macro_data_to_db(macro_data):
+    conn = connect_db()  
+    cursor = conn.cursor()
+
+    # ✅ Delete old macroeconomic data before inserting new
+    cursor.execute("DELETE FROM macro_data")
+
+    # ✅ Insert new macroeconomic data
+    for entry in macro_data:
+        cursor.execute("""
+            INSERT INTO macro_data (indicator, value, unit, country, source)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (
+            entry["indicator"],
+            entry["value"],
+            entry["unit"],
+            entry["country"],
+            entry["source"]
+        ))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print("✅ Macro data updated: old data deleted, new data saved.")
 
 def fetch_macro_data_from_api():
     print("\n🌐 Fetching macroeconomic indicators from FRED API...\n")
@@ -44,3 +71,4 @@ def fetch_macro_data_from_api():
         print("✅ All macroeconomic data saved to database.")
     else:
         print("⚠️ No macroeconomic data was collected.")
+
