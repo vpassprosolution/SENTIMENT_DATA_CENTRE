@@ -1,6 +1,7 @@
 import psycopg2
 from settings import POSTGRESQL_URL
 
+
 # Function to connect to PostgreSQL database
 def connect_db():
     try:
@@ -51,13 +52,16 @@ def save_macro_data_to_db(data_list):
 
 # Existing function: save news articles
 def save_news_to_db(news_list):
+    from news_collector import format_instrument_name  # ✅ Make sure this import is at the top
+
     conn = connect_db()
     if not conn:
         return
 
     cursor = conn.cursor()
     for news in news_list:
-        instrument = news["instrument"].replace("/", "-")
+        instrument = format_instrument_name(news["instrument"])  # ✅ Proper formatting here
+
         cursor.execute("""
             INSERT INTO news_articles (source, instrument, title, description, url, published_at, sentiment)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
@@ -75,6 +79,7 @@ def save_news_to_db(news_list):
     cursor.close()
     conn.close()
     print("✅ News data (with sentiment) saved to PostgreSQL database.")
+
 
 # Save real-time prices
 def save_prices_to_db(prices):

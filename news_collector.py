@@ -12,6 +12,9 @@ import psycopg2  # ✅ Add this line
 from settings import DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
 from macro_fred_api import fetch_macro_data_from_api
 
+# ✅ Consistent format for instruments (e.g., "eur/usd" → "eur-usd")
+def format_instrument_name(instrument):
+    return instrument.lower().replace("/", "-")
 
 
 # Ensure vader_lexicon is downloaded
