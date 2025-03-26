@@ -22,8 +22,11 @@ sia = SentimentIntensityAnalyzer()
 
 # ✅ Strong financial keywords to filter relevant news
 FINANCIAL_KEYWORDS = [
-    "central bank", "economic", "commodities", "stocks"
+    "central bank", "economic", "commodities", "stocks",
+    "war", "wars", "bitcoin", "eth", "inflation", "risk sentiment"
 ]
+
+
 
 
 
@@ -104,62 +107,71 @@ def fetch_newsapi_news():
     news_data = []
 
     for instrument, keyword in INSTRUMENTS.items():
-        # Improve keyword for Gold to get more financial news
         if instrument == "gold":
             keyword = "gold price OR gold market OR XAUUSD OR gold trading"
 
-        params = {
-            "q": keyword,
-            "apiKey": NEWS_API_KEY,
-            "language": "en",
-            "sortBy": "publishedAt",
-            "pageSize": 20  # Fetch more to allow filtering
-        }
+        filtered_articles = []
+        page = 1
 
-        response = requests.get(url, params=params)
-        print(f"\n🔎 NewsAPI Response for {instrument}: {response.status_code}")
+        while len(filtered_articles) < 3 and page <= 3:  # Retry up to 3 pages max
+            params = {
+                "q": keyword,
+                "apiKey": NEWS_API_KEY,
+                "language": "en",
+                "sortBy": "publishedAt",
+                "pageSize": 20,
+                "page": page
+            }
 
-        if response.status_code == 200:
-            articles = response.json().get("articles", [])
-            filtered_articles = []
+            response = requests.get(url, params=params)
+            print(f"\n🔎 NewsAPI Response for {instrument} (Page {page}): {response.status_code}")
 
-            for article in articles:
-                title = article.get("title") or "No Title"
-                description = article.get("description") or "No Description"
+            if response.status_code == 200:
+                articles = response.json().get("articles", [])
 
-                print(f"DEBUG: Title: {title}")
-                print(f"DEBUG: Description: {description}")
+                for article in articles:
+                    title = article.get("title") or "No Title"
+                    description = article.get("description") or "No Description"
 
-                sentiment = analyze_sentiment(title + " " + description)
+                    print(f"DEBUG: Title: {title}")
+                    print(f"DEBUG: Description: {description}")
 
-                # ✅ Filter: Match keywords + instrument + skip Neutral
-                if is_financial_news(title, description, instrument) and sentiment != "Neutral":
-                    filtered_articles.append({
-                        "source": "NewsAPI",
-                        "instrument": instrument,
-                        "title": title,
-                        "description": description,
-                        "url": article.get("url", "#"),
-                        "published_at": article.get("publishedAt", "N/A"),
-                        "sentiment": sentiment
-                    })
+                    sentiment = analyze_sentiment(title + " " + description)
 
-                # ✅ Stop when 3 strong articles are collected
-                if len(filtered_articles) == 3:
-                    break
+                    if is_financial_news(title, description, instrument) and sentiment != "Neutral":
+                        filtered_articles.append({
+                            "source": "NewsAPI",
+                            "instrument": instrument,
+                            "title": title,
+                            "description": description,
+                            "url": article.get("url", "#"),
+                            "published_at": article.get("publishedAt", "N/A"),
+                            "sentiment": sentiment
+                        })
 
-            news_data.extend(filtered_articles)
+                    if len(filtered_articles) == 3:
+                        break
 
-        elif response.status_code == 429:
-            print("🛑 NewsAPI Rate Limit Reached! Waiting 10 minutes before retrying...")
-            time.sleep(600)
-            return fetch_newsapi_news()
+                page += 1
+                time.sleep(1)  # Prevent rate limit
 
+            elif response.status_code == 429:
+                print("🛑 NewsAPI Rate Limit Reached! Waiting 10 minutes before retrying...")
+                time.sleep(600)
+                continue
+
+            else:
+                print(f"⚠️ Failed to fetch NewsAPI data for {instrument}. Status Code: {response.status_code}")
+                break
+
+        # Final fallback if less than 3 were collected
+        if len(filtered_articles) < 3:
+            print(f"⚠️ WARNING: Only found {len(filtered_articles)} news for {instrument}!")
         else:
-            print(f"⚠️ Failed to fetch NewsAPI data for {instrument}. Status Code: {response.status_code}")
+            print(f"✅ {instrument}: 3 news collected.")
 
-        # ⏳ Pause to respect rate limits
-        time.sleep(10)
+        news_data.extend(filtered_articles)
+        time.sleep(2)  # Additional pause between instruments
 
     return news_data
 
