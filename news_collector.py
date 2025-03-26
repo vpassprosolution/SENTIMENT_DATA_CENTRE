@@ -110,18 +110,19 @@ def fetch_newsapi_news():
     news_data = []
 
     for instrument, keyword in INSTRUMENTS.items():
+        # 🔧 Use flexible keywords for problematic instruments
         if instrument == "gold":
-            # Updated Gold keywords to include "gold trump" and "gold usd"
-            keyword = "gold price OR gold market OR XAUUSD OR gold trading OR gold trump OR gold usd"
+            keyword = "gold price OR gold market OR XAUUSD OR gold trading OR gold outlook"
         elif instrument == "eur/usd":
-            keyword = "eur/usd OR euro dollar OR EURUSD"
+            keyword = "eur/usd OR euro dollar OR EURUSD OR euro outlook"
         elif instrument == "gbp/usd":
-            keyword = "gbp/usd OR pound dollar OR GBPUSD"
+            keyword = "gbp/usd OR pound dollar OR GBPUSD OR pound outlook"
 
         filtered_articles = []
+        fallback_articles = []
         page = 1
 
-        while len(filtered_articles) < 3 and page <= 3:  # Retry up to 3 pages max
+        while len(filtered_articles) < 3 and page <= 3:
             params = {
                 "q": keyword,
                 "apiKey": NEWS_API_KEY,
@@ -140,14 +141,25 @@ def fetch_newsapi_news():
                 for article in articles:
                     title = article.get("title") or "No Title"
                     description = article.get("description") or "No Description"
+                    text = title + " " + description
+                    sentiment = analyze_sentiment(text)
 
-                    print(f"DEBUG: Title: {title}")
-                    print(f"DEBUG: Description: {description}")
+                    is_strict = is_financial_news(title, description, instrument)
 
-                    sentiment = analyze_sentiment(title + " " + description)
-
-                    if is_financial_news(title, description, instrument) and sentiment != "Neutral":
+                    # ✅ Collect strict matches first
+                    if is_strict and sentiment != "Neutral":
                         filtered_articles.append({
+                            "source": "NewsAPI",
+                            "instrument": instrument,
+                            "title": title,
+                            "description": description,
+                            "url": article.get("url", "#"),
+                            "published_at": article.get("publishedAt", "N/A"),
+                            "sentiment": sentiment
+                        })
+                    elif sentiment != "Neutral":
+                        # ⏪ Save fallback candidates
+                        fallback_articles.append({
                             "source": "NewsAPI",
                             "instrument": instrument,
                             "title": title,
@@ -161,25 +173,30 @@ def fetch_newsapi_news():
                         break
 
                 page += 1
-                time.sleep(1)  # Prevent rate limit
+                time.sleep(1)
 
             elif response.status_code == 429:
                 print("🛑 NewsAPI Rate Limit Reached! Waiting 10 minutes before retrying...")
                 time.sleep(600)
                 continue
-
             else:
                 print(f"⚠️ Failed to fetch NewsAPI data for {instrument}. Status Code: {response.status_code}")
                 break
 
-        # Final fallback if less than 3 were collected
+        # ⏪ If strict didn't give 3, use fallback
+        if len(filtered_articles) < 3 and fallback_articles:
+            needed = 3 - len(filtered_articles)
+            filtered_articles += fallback_articles[:needed]
+            print(f"⚠️ Fallback used for {instrument}: {len(filtered_articles)} total.")
+
+        # 🛑 Still not enough
         if len(filtered_articles) < 3:
-            print(f"⚠️ WARNING: Only found {len(filtered_articles)} news for {instrument}!")
+            print(f"🟥 WARNING: Only found {len(filtered_articles)} news for {instrument}")
         else:
-            print(f"✅ {instrument}: 3 news collected.")
+            print(f"✅ {instrument}: 3 news saved.")
 
         news_data.extend(filtered_articles)
-        time.sleep(2)  # Additional pause between instruments
+        time.sleep(2)
 
     return news_data
 
